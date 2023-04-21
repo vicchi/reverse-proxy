@@ -1,0 +1,47 @@
+services:
+  proxy-service:
+    image: traefik:v2.9
+    ports:
+      - 80:80
+      - 443:443
+      # - 8080:8080
+    networks:
+      - vicchi-backend
+    command:
+      # - --log.level=DEBUG
+      # - --api.insecure=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --certificatesresolvers.reverse-proxy-ssl.acme.email=${CERTBOT_EMAIL:?Certbot email not defined}
+      - --certificatesresolvers.reverse-proxy-ssl.acme.storage=/etc/acme/acme.json
+      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge=true
+      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge.resolvers=${CLOUDFLARE_RESOLVERS:?CloudFlare resolvers not defined}
+      - --certificatesresolvers.reverse-proxy-ssl.acme.caserver=${CERTBOT_CASERVER:?Certbot CA server not defied}
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL:?CloudFlare email not defined}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY:?CloudFlare API key not defined}
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data-stores/proxy/acme:/etc/acme
+
+  portainer-agent:
+    image: portainer/agent:2.16.2
+    ports:
+      - 9001:9001
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - vicchi-backend
+
+networks:
+  vicchi-backend:
+    external: true
