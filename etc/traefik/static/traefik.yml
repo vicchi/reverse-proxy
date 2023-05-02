@@ -39,3 +39,12 @@ certificatesResolvers:
       caServer: https://acme-v02.api.letsencrypt.org/directory
       # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
 
+  reverse-proxy-http:
+    acme:
+      email: gary@vicchi.org
+      storage: /etc/acme/acme-http.json
+      httpChallenge:
+        entryPoint: web
+      caServer: https://acme-v02.api.letsencrypt.org/directory
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+
