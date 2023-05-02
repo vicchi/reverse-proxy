@@ -8,21 +8,14 @@ services:
     networks:
       - vicchi-backend
     command:
-      # - --log.level=DEBUG
-      # - --api.insecure=true
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
-      - --entrypoints.websecure.address=:443
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --certificatesresolvers.reverse-proxy-ssl.acme.email=${CERTBOT_EMAIL:?Certbot email not defined}
-      - --certificatesresolvers.reverse-proxy-ssl.acme.storage=/etc/acme/acme.json
-      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge=true
-      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge.provider=cloudflare
-      - --certificatesresolvers.reverse-proxy-ssl.acme.dnschallenge.resolvers=${CLOUDFLARE_RESOLVERS:?CloudFlare resolvers not defined}
-      - --certificatesresolvers.reverse-proxy-ssl.acme.caserver=${CERTBOT_CASERVER:?Certbot CA server not defied}
+      - --configFile=/etc/traefik/traefik.yml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOST:?Site host not defined}`)
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.tls.certresolver=reverse-proxy
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/users
     environment:
       - CF_API_EMAIL=${CLOUDFLARE_EMAIL:?CloudFlare email not defined}
       - CF_API_KEY=${CLOUDFLARE_API_KEY:?CloudFlare API key not defined}
@@ -30,6 +23,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./data-stores/proxy/acme:/etc/acme
+      - ./etc/traefik/dynamic:/dynamic
+      - ./etc/traefik/users:/etc/traefik/users
+      - ./etc/traefik/static/traefik.yml:/etc/traefik/traefik.yml
 
   portainer-agent:
     image: portainer/agent:2.16.2

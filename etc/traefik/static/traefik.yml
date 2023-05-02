@@ -30,7 +30,7 @@ certificatesResolvers:
   reverse-proxy:
     acme:
       email: gary@vicchi.org
-      storage: /etc/acme/acme.json
+      storage: /etc/acme/acme-dns.json
       dnsChallenge:
         provider: cloudflare
         resolvers:
