@@ -40,4 +40,10 @@ http:
         sslRedirect: true
         stsIncludeSubdomains: true
         stsPreload: true
-        stsSeconds: 15768000 
+        stsSeconds: 15768000
+
+    bareDomainRedirect:
+      redirectRegex:
+        regex: "^https?://(?:www\\.)?(.+)"
+        replacement: "https://www.${1}"
+        permanent: true
