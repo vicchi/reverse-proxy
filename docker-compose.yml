@@ -30,6 +30,15 @@ services:
       - ./etc/traefik/users:/etc/traefik/users
       - ./etc/traefik/static/traefik.yml:/etc/traefik/traefik.yml
 
+  whoami:
+    image: containous/whoami:latest
+    networks:
+      - vicchi-backend
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`www.eurotechnews.net`) || Host(`eurotechnews.net`)
+
   portainer-agent:
     image: portainer/agent:2.16.2
     ports:
