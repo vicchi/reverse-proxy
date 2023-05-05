@@ -16,9 +16,6 @@ services:
       - traefik.http.routers.dashboard.tls.certresolver=reverse-proxy
       - traefik.http.routers.dashboard.middlewares=auth
       - traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/users
-      - traefik.http.routers.eurotechnews.rule=Host(`www.eurotechnews.net`) || Host(`eurotechnews.net`)
-      - traefik.http.routers.eurotechnews.service=noop@internal
-      - traefik.http.routers.eurotechnews.middlewares=eurotechRedirect@file
     environment:
       - CF_API_EMAIL=${CLOUDFLARE_EMAIL:?CloudFlare email not defined}
       - CF_API_KEY=${CLOUDFLARE_API_KEY:?CloudFlare API key not defined}
@@ -29,15 +26,6 @@ services:
       - ./etc/traefik/dynamic:/dynamic
       - ./etc/traefik/users:/etc/traefik/users
       - ./etc/traefik/static/traefik.yml:/etc/traefik/traefik.yml
-
-  whoami:
-    image: containous/whoami:latest
-    networks:
-      - vicchi-backend
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.whoami.rule=Host(`www.eurotechnews.net`) || Host(`eurotechnews.net`)
 
   portainer-agent:
     image: portainer/agent:2.16.2
