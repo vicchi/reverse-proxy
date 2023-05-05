@@ -47,3 +47,9 @@ http:
         regex: "^https?://(?:www\\.)?(.+)"
         replacement: "https://www.${1}"
         permanent: true
+
+    eurotechRedirect:
+      redirectRegex:
+        regex: "^https?://(?:www\.)?eurotechnews.net(/.*)?"
+        replacement: "https://eurotechnews.blogspot.com${1}"
+        permanent: true
