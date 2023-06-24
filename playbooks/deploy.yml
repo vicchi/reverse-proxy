@@ -1,0 +1,5 @@
+---
+- name: Deploy the reverse-proxy Docker stack
+  hosts: cloud
+  roles:
+    - deploy

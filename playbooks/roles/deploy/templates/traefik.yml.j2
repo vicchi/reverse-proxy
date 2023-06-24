@@ -1,0 +1,47 @@
+api:
+  dashboard: true
+  insecure: false
+
+log:
+  level: DEBUG
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: :443
+
+providers:
+  docker:
+    exposedByDefault: false
+    
+  file:
+    filename: /dynamic/traefik.yml
+    watch: true
+
+certificatesResolvers:
+  reverse-proxy:
+    acme:
+      email: {{ certbot_email }}
+      storage: /etc/acme/acme-dns.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - 1.1.1.1:53
+          - 8.8.8.8:53
+      caServer: {{ certbot_caserver }}
+
+  reverse-proxy-http:
+    acme:
+      email: {{ certbot_email }}
+      storage: /etc/acme/acme-http.json
+      httpChallenge:
+        entryPoint: web
+      caServer: {{ certbot_caserver }}

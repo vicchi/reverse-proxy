@@ -1,0 +1,42 @@
+services:
+  proxy-service:
+    image: traefik:{{ traefik_version }}
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - {{ traefik_network }}
+    command:
+      - --configFile=/etc/traefik/traefik.yml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_HOST:?Site host not defined}`)
+      - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.tls.certresolver=reverse-proxy
+      - traefik.http.routers.dashboard.middlewares=auth
+      - traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/users
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL:?CloudFlare email not defined}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY:?CloudFlare API key not defined}
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data-stores/proxy/acme:/etc/acme
+      - ./etc/traefik/dynamic:/dynamic
+      - ./etc/traefik/users:/etc/traefik/users
+      - ./etc/traefik/static/traefik.yml:/etc/traefik/traefik.yml
+
+  portainer-agent:
+    image: portainer/agent:{{ portainer_version }}
+    ports:
+      - 9001:9001
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - {{ traefik_network }}
+
+networks:
+  {{ traefik_network }}:
+    external: true

@@ -1,0 +1,8 @@
+secrets_file: .secrets
+values:
+  - certbot_email
+  - cloudflare_email
+  - cloudflare_api_key
+  - certbot_caserver
+  - dashboard_user
+  - dashboard_password

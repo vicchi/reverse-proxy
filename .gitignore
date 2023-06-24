@@ -1,4 +1,6 @@
 .env
+.secrets
 data-stores/*
 !data-stores/.gitkeep
 etc/traefik/users
+playbooks/.env.*

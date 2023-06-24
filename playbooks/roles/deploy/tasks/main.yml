@@ -1,0 +1,148 @@
+---
+# Deploy the reverse-proxy
+
+- name: Read secrets file
+  delegate_to: localhost
+  shell: "source {{ lookup('env','PWD') + '/' + secrets_file }}; echo ${{ item | upper }}"
+  register: output
+  with_items: "{{ values }}"
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Convert secrets to Ansible variables
+  delegate_to: localhost
+  set_fact:
+    "{{ item.0 }}": "{{ item.1.stdout }}"
+  with_together:
+    - "{{ values }}"
+    - "{{ output.results }}"
+  changed_when: false
+
+- name: Create templated .env for {{ traefik_host }}
+  delegate_to: localhost
+  ansible.builtin.template:
+    src: .env.j2
+    dest: ".env.{{ traefik_host }}"
+
+# Urgh#1 ... the software-properties-common package is needed to install
+# add-apt-repository
+
+- name: Install package dependencies
+  ansible.builtin.apt:
+    force_apt_get: true
+    pkg:
+      - software-properties-common
+    state: present
+    update_cache: true
+    autoremove: true
+  register: dependencies
+  become: true
+  changed_when: dependencies.changed
+  failed_when: dependencies.failed
+
+# Urgh#2 ... the universe repository must be enabled to allow python3-passlib to be installed
+# as a dependency for community.general.htpasswd
+# Urgh#3 ... ansible.builtin.apt_repository doesn't handle enabling the universe repository
+# so we have to fall back to a shell command. Sigh
+
+- name: Enable apt universe repository
+  ansible.builtin.shell:
+    cmd: add-apt-repository universe -y
+  become: true
+
+- name: Install package dependencies
+  ansible.builtin.apt:
+    force_apt_get: true
+    pkg:
+      - python3-pip
+      - python3-passlib
+    state: present
+    update_cache: true
+    autoremove: true
+  register: dependencies
+  become: true
+  changed_when: dependencies.changed
+  failed_when: dependencies.failed
+
+# Urgh#4 .. community.general.docker_compose uses docker-compose and not docker compose,
+# so install it
+
+- name: Setup docker compose
+  ansible.builtin.pip:
+    name: docker-compose
+
+- name: Create deployment directory
+  ansible.builtin.file:
+    path: "{{ deploy_root }}/{{ deploy_dir }}/{{ datastore_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Deploy and rename .env
+  ansible.builtin.copy:
+    src: ".env.{{ traefik_host }}"
+    dest: "{{ deploy_root }}/{{ deploy_dir }}/.env"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Deploy main Traefik configuration
+  ansible.posix.synchronize:
+    archive: true
+    compress: true
+    delete: true
+    dest: "{{ deploy_root }}/{{ deploy_dir }}"
+    partial: true
+    recursive: true
+    src: "{{ lookup('env','PWD') + '/etc' }}"
+    rsync_opts:
+      - "--chown={{ deploy_user }}:{{ deploy_group }}"
+  become: true
+
+- name: Deploy templated static Traefik configuration
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: "{{ deploy_root }}/{{ deploy_dir }}/etc/traefik/static/traefik.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Check/create Traefik dashboard users file for {{ traefik_host }}
+  community.general.htpasswd:
+    path: "{{ deploy_root }}/{{ deploy_dir }}/etc/traefik/users"
+    name: "{{ dashboard_user }}"
+    password: "{{ dashboard_password }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "640"
+  become: true
+
+- name: Deploy templated docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ deploy_root }}/{{ deploy_dir }}/docker-compose.yml"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_group }}"
+    mode: "700"
+  become: true
+
+- name: Check/create Traefik backend Docker network
+  community.docker.docker_network:
+    driver: bridge
+    name: "{{ traefik_network }}"
+    scope: local
+    state: present
+  become: true
+
+- name: Bring the Docker stack up as {{ compose_project }}
+  community.general.docker_compose:
+    project_name: "{{ compose_project }}"
+    project_src: "{{ deploy_root }}/{{ deploy_dir }}"
+    state: present
+    pull: true
+    recreate: smart
