@@ -25,4 +25,6 @@ ansible-playbook playbooks.yml -K
 
 ## Colophon and Licence
 
-This is a thing made by [Gary Gale](https://www.vicchi.org/pages/about/) and is licensed under the [BSD 3 Clause licence](LICENCE).
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+This is a thing made by [Gary Gale](https://www.vicchi.org/pages/about/) and is licensed under the BSD 3 Clause licence.
