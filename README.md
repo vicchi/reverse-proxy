@@ -22,3 +22,7 @@ ansible-playbook playbooks.yml -K
 
 * Add Gitea and GitHub actions workflows for build and deployment
 * Add Ansible Vault for deployment `sudo` authentication
+
+## Colophon abnd Licence
+
+This is a thing made by [Gary Gale](https://www.vicchi.org/pages/about/) and is licensed under the [BSD 3 Clause licence](./LICENCE).
