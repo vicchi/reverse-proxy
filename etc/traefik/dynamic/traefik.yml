@@ -41,6 +41,10 @@ http:
         stsIncludeSubdomains: true
         stsPreload: true
         stsSeconds: 15768000
+        referrerPolicy: no-referrer-when-downgrade
+        permissionsPolicy: geolocation=(self)
+        customResponseHeaders:
+          server: ""
 
     bareDomainRedirect:
       redirectRegex:

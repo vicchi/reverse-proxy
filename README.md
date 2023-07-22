@@ -15,7 +15,7 @@ The default Ansible inventory, configured in `ansible.cfg`, lives in `./playbook
 ## Deploy
 
 ```
-ansible-playbook playbooks.yml -K
+ansible-playbook playbooks/deploy.yml -K
 ```
 
 ## To Do
